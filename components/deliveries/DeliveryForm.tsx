@@ -175,12 +175,25 @@ export function DeliveryForm({
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
+  // Enterキーでの誤送信を防止
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Enterキーが押された時、テキストエリア以外では送信を防止
+    if (e.key === "Enter" && e.target instanceof HTMLElement) {
+      const tagName = e.target.tagName.toLowerCase();
+      // テキストエリアは改行を許可、それ以外はEnterでの送信を防止
+      if (tagName !== "textarea") {
+        e.preventDefault();
+      }
+    }
+  };
+
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         handleSubmit(false);
       }}
+      onKeyDown={handleKeyDown}
       className="bg-dark-panel border border-dark-border rounded-lg p-6 space-y-5"
     >
       {error && (
