@@ -1,7 +1,20 @@
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
 import type { Driver, DeliveryWithDriver } from "@/lib/types";
-import { AnalyticsPeriodSelector } from "@/components/map/AnalyticsPeriodSelector";
+
+// SSR無効化で期間選択コンポーネントを読み込み（windowを使用するため）
+const AnalyticsPeriodSelector = dynamic(
+  () =>
+    import("@/components/map/AnalyticsPeriodSelector").then(
+      (mod) => mod.AnalyticsPeriodSelector
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-8 bg-dark-panel2 rounded animate-pulse w-64" />
+    ),
+  }
+);
 
 // SSR無効化でMapコンポーネントを読み込み
 const AnalyticsMap = dynamic(
