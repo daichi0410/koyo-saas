@@ -1,8 +1,6 @@
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
 import type { Driver, DeliveryWithDriver } from "@/lib/types";
-import { PeriodSelector } from "@/components/map/PeriodSelector";
-import { StatsDashboard } from "@/components/map/StatsDashboard";
 
 // SSR無効化でMapコンポーネントを読み込み
 const AnalyticsMap = dynamic(
@@ -13,6 +11,20 @@ const AnalyticsMap = dynamic(
     loading: () => (
       <div className="h-full flex items-center justify-center bg-dark-bg">
         <div className="text-dark-muted">マップを読み込み中...</div>
+      </div>
+    ),
+  }
+);
+
+// SSR無効化で統計ダッシュボードを読み込み（Rechartsを使用するため）
+const StatsDashboard = dynamic(
+  () =>
+    import("@/components/map/StatsDashboard").then((mod) => mod.StatsDashboard),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="bg-dark-panel border-t border-dark-border p-4">
+        <div className="text-dark-muted text-sm">統計を読み込み中...</div>
       </div>
     ),
   }

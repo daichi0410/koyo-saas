@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
-import "leaflet.heat";
 
 interface HeatmapLayerProps {
   points: [number, number, number][]; // [lat, lng, intensity]
@@ -32,9 +31,17 @@ declare module "leaflet" {
 
 export function HeatmapLayer({ points, options = {} }: HeatmapLayerProps) {
   const map = useMap();
+  const [heatLoaded, setHeatLoaded] = useState(false);
+
+  // leaflet.heat を動的にロード
+  useEffect(() => {
+    import("leaflet.heat").then(() => {
+      setHeatLoaded(true);
+    });
+  }, []);
 
   useEffect(() => {
-    if (!points || points.length === 0) return;
+    if (!heatLoaded || !points || points.length === 0) return;
 
     const defaultOptions = {
       radius: 25,
@@ -56,7 +63,7 @@ export function HeatmapLayer({ points, options = {} }: HeatmapLayerProps) {
     return () => {
       map.removeLayer(heatLayer);
     };
-  }, [map, points, options]);
+  }, [map, points, options, heatLoaded]);
 
   return null;
 }
