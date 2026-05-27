@@ -2,43 +2,25 @@ import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
 import type { Driver, DeliveryWithDriver } from "@/lib/types";
 
-// SSR無効化で期間選択コンポーネントを読み込み（windowを使用するため）
-const AnalyticsPeriodSelector = dynamic(
+// SSR完全無効化でクライアントラッパーを読み込み
+const AnalyticsClientWrapper = dynamic(
   () =>
-    import("@/components/map/AnalyticsPeriodSelector").then(
-      (mod) => mod.AnalyticsPeriodSelector
+    import("@/components/map/AnalyticsClientWrapper").then(
+      (mod) => mod.AnalyticsClientWrapper
     ),
   {
     ssr: false,
     loading: () => (
-      <div className="h-8 bg-dark-panel2 rounded animate-pulse w-64" />
-    ),
-  }
-);
-
-// SSR無効化でMapコンポーネントを読み込み
-const AnalyticsMap = dynamic(
-  () =>
-    import("@/components/map/AnalyticsMap").then((mod) => mod.AnalyticsMap),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-full flex items-center justify-center bg-dark-bg">
-        <div className="text-dark-muted">マップを読み込み中...</div>
-      </div>
-    ),
-  }
-);
-
-// SSR無効化で統計ダッシュボードを読み込み（Rechartsを使用するため）
-const StatsDashboard = dynamic(
-  () =>
-    import("@/components/map/StatsDashboard").then((mod) => mod.StatsDashboard),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="bg-dark-panel border-t border-dark-border p-4">
-        <div className="text-dark-muted text-sm">統計を読み込み中...</div>
+      <div className="h-full flex flex-col">
+        <div className="flex-shrink-0 bg-dark-panel border-b border-dark-border px-4 py-3">
+          <div className="h-8 bg-dark-panel2 rounded animate-pulse w-64" />
+        </div>
+        <div className="flex-1 min-h-0 flex items-center justify-center bg-dark-bg">
+          <div className="text-dark-muted">読み込み中...</div>
+        </div>
+        <div className="bg-dark-panel border-t border-dark-border p-4">
+          <div className="text-dark-muted text-sm">統計を読み込み中...</div>
+        </div>
       </div>
     ),
   }
@@ -89,20 +71,12 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   const drivers = (driversData || []) as Driver[];
 
   return (
-    <div className="h-full flex flex-col">
-      {/* 期間選択ヘッダー */}
-      <div className="flex-shrink-0 bg-dark-panel border-b border-dark-border px-4 py-3">
-        <AnalyticsPeriodSelector startDate={startDate} endDate={endDate} />
-      </div>
-
-      {/* マップエリア */}
-      <div className="flex-1 min-h-0">
-        <AnalyticsMap deliveries={deliveries} drivers={drivers} />
-      </div>
-
-      {/* 統計ダッシュボード */}
-      <StatsDashboard deliveries={deliveries} drivers={drivers} />
-    </div>
+    <AnalyticsClientWrapper
+      deliveries={deliveries}
+      drivers={drivers}
+      startDate={startDate}
+      endDate={endDate}
+    />
   );
 }
 
