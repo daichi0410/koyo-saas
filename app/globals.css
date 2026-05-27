@@ -1,0 +1,232 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ダークモード（デフォルト） */
+:root,
+[data-theme="dark"] {
+  --bg: #0c0e1a;
+  --panel: #13152a;
+  --panel2: #1b1e35;
+  --border: #252840;
+  --text: #dde1f0;
+  --muted: #5a607a;
+  --cyan: #4FC3F7;
+  --input-bg: #1b1e35;
+}
+
+/* ライトモード */
+[data-theme="light"] {
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --panel2: #f0f2f5;
+  --border: #e0e4ea;
+  --text: #1a1d2e;
+  --muted: #6b7280;
+  --cyan: #0891b2;
+  --input-bg: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* スクロールバー */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Leaflet カスタマイズ */
+.leaflet-container {
+  background: var(--bg) !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(13, 15, 26, 0.8) !important;
+  color: var(--muted) !important;
+  font-size: 9px !important;
+}
+
+[data-theme="light"] .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--muted) !important;
+}
+
+.leaflet-control-zoom a {
+  background: var(--panel) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: var(--panel2) !important;
+}
+
+/* カスタムツールチップ */
+.custom-tooltip {
+  background: var(--panel2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 5px !important;
+  color: var(--text) !important;
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="light"] .custom-tooltip {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-tooltip-top.custom-tooltip::before {
+  border-top-color: var(--border) !important;
+}
+
+/* 油種タグ */
+.oil-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid;
+}
+
+.oil-tag.軽油 {
+  color: #0891b2;
+  border-color: rgba(8, 145, 178, 0.3);
+  background: rgba(8, 145, 178, 0.1);
+}
+
+[data-theme="dark"] .oil-tag.軽油 {
+  color: #4FC3F7;
+  border-color: rgba(79, 195, 247, 0.3);
+  background: rgba(79, 195, 247, 0.1);
+}
+
+.oil-tag.重油 {
+  color: #ea580c;
+  border-color: rgba(234, 88, 12, 0.3);
+  background: rgba(234, 88, 12, 0.1);
+}
+
+[data-theme="dark"] .oil-tag.重油 {
+  color: #FF7043;
+  border-color: rgba(255, 112, 67, 0.3);
+  background: rgba(255, 112, 67, 0.1);
+}
+
+.oil-tag.灯油 {
+  color: #16a34a;
+  border-color: rgba(22, 163, 74, 0.3);
+  background: rgba(22, 163, 74, 0.1);
+}
+
+[data-theme="dark"] .oil-tag.灯油 {
+  color: #A5D6A7;
+  border-color: rgba(165, 214, 167, 0.3);
+  background: rgba(165, 214, 167, 0.1);
+}
+
+/* 時間指定タグ */
+.time-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid rgba(234, 88, 12, 0.3);
+  background: rgba(234, 88, 12, 0.08);
+  color: #ea580c;
+}
+
+[data-theme="dark"] .time-tag {
+  border-color: rgba(255, 159, 67, 0.3);
+  background: rgba(255, 159, 67, 0.08);
+  color: #FF9F43;
+}
+
+/* ステータスバッジ */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.status-badge.scheduled {
+  background: rgba(8, 145, 178, 0.15);
+  color: #0891b2;
+}
+
+[data-theme="dark"] .status-badge.scheduled {
+  background: rgba(79, 195, 247, 0.15);
+  color: #4FC3F7;
+}
+
+.status-badge.in_progress {
+  background: rgba(234, 88, 12, 0.15);
+  color: #ea580c;
+}
+
+[data-theme="dark"] .status-badge.in_progress {
+  background: rgba(255, 159, 67, 0.15);
+  color: #FF9F43;
+}
+
+.status-badge.completed {
+  background: rgba(22, 163, 74, 0.15);
+  color: #16a34a;
+}
+
+[data-theme="dark"] .status-badge.completed {
+  background: rgba(165, 214, 167, 0.15);
+  color: #A5D6A7;
+}
+
+.status-badge.cancelled {
+  background: rgba(220, 38, 38, 0.15);
+  color: #dc2626;
+}
+
+[data-theme="dark"] .status-badge.cancelled {
+  background: rgba(255, 107, 107, 0.15);
+  color: #FF6B6B;
+}
+
+/* テーマ切り替えトランジション */
+.theme-transition * {
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s !important;
+}

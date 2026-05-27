@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>向陽 配車ノート — エリアマップ</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0c0e1a;
+      --panel: #13152a;
+      --panel2: #1b1e35;
+      --border: #252840;
+      --text: #dde1f0;
+      --muted: #5a607a;
+      --cyan: #4FC3F7;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans',
+        'Hiragino Kaku Gothic ProN', Meiryo, 'Yu Gothic UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    #root { display: flex; flex-direction: column; height: 100%; }
+
+    /* ── HEADER ── */
+    header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 0 20px;
+      height: 52px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      z-index: 1000;
+    }
+
+    .logo { font-size: 17px; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
+    .logo em { color: var(--cyan); font-style: normal; }
+
+    .date-chip {
+      background: var(--panel2); border: 1px solid var(--border);
+      border-radius: 5px; padding: 3px 11px;
+      font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums;
+    }
+
+    .weekday { color: #FF9F43; font-weight: 700; }
+
+    .header-stats { margin-left: auto; display: flex; gap: 20px; }
+    .hstat { text-align: right; }
+    .hstat-num { font-size: 22px; font-weight: 800; color: #fff; line-height: 1; font-variant-numeric: tabular-nums; }
+    .hstat-lbl { font-size: 9px; color: var(--muted); letter-spacing: 0.5px; margin-top: 2px; }
+
+    /* ── MAIN LAYOUT ── */
+    .main { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+    /* ── SIDEBAR ── */
+    aside {
+      width: 240px; flex-shrink: 0;
+      background: var(--panel); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+      z-index: 100;
+    }
+
+    .sb-head {
+      padding: 13px 14px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sb-title { font-size: 9.5px; font-weight: 700; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
+
+    .sb-controls { display: flex; gap: 5px; margin-top: 9px; }
+    .btn-xs {
+      flex: 1; padding: 5px 6px; font-size: 10.5px;
+      border: 1px solid var(--border); background: var(--panel2);
+      color: var(--muted); border-radius: 4px; cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-xs:hover { border-color: var(--cyan); color: var(--cyan); }
+
+    .driver-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+
+    .driver-row {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 14px; cursor: pointer;
+      transition: background .1s; user-select: none;
+      border-radius: 0;
+    }
+    .driver-row:hover { background: var(--panel2); }
+    .driver-row.off { opacity: .35; }
+
+    .d-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .d-name { font-size: 13px; font-weight: 600; flex: 1; color: #fff; }
+    .d-count { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 500; }
+    .d-veh {
+      font-size: 9.5px; color: var(--muted);
+      background: var(--panel2); border: 1px solid var(--border);
+      border-radius: 3px; padding: 1px 5px;
+    }
+
+    .sb-foot { padding: 12px 14px; border-top: 1px solid var(--border); }
+    .oil-tabs { display: flex; gap: 4px; margin-top: 8px; }
+    .oil-tab {
+      flex: 1; padding: 5px 0; font-size: 10.5px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); border-radius: 4px; cursor: pointer; transition: all .15s;
+    }
+    .oil-tab.on { background: var(--cyan); border-color: var(--cyan); color: #000; font-weight: 700; }
+
+    /* ── MAP ── */
+    #map-wrap { flex: 1; position: relative; }
+    #map { width: 100%; height: 100%; }
+
+    .leaflet-container { background: #0c0e1a !important; }
+    .leaflet-control-attribution { background: rgba(13,15,26,.8) !important; color: var(--muted) !important; font-size: 9px !important; }
+    .leaflet-control-attribution a { color: var(--muted) !important; }
+    .leaflet-control-zoom a { background: var(--panel) !important; color: var(--text) !important; border-color: var(--border) !important; }
+    .leaflet-control-zoom a:hover { background: var(--panel2) !important; }
+
+    .marker-label {
+      position: absolute;
+      white-space: nowrap;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,.9);
+      pointer-events: none;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* ── DETAIL PANEL ── */
+    #detail {
+      position: absolute; right: 0; top: 0;
+      width: 290px; height: 100%;
+      background: var(--panel); border-left: 1px solid var(--border);
+      transform: translateX(100%);
+      transition: transform .28s cubic-bezier(.25,.8,.25,1);
+      z-index: 500; display: flex; flex-direction: column;
+    }
+    #detail.open { transform: none; }
+
+    .dp-head {
+      padding: 15px 14px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .dp-company { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.35; }
+    .dp-driver { display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; }
+    .dp-driver-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dp-driver-name { font-size: 11px; color: var(--muted); }
+
+    .dp-close {
+      width: 26px; height: 26px; flex-shrink: 0;
+      border: 1px solid var(--border); background: var(--panel2);
+      border-radius: 4px; cursor: pointer; color: var(--muted);
+      font-size: 13px; display: flex; align-items: center; justify-content: center;
+    }
+    .dp-close:hover { color: #fff; border-color: #fff; }
+
+    .dp-body { padding: 14px; display: flex; flex-direction: column; gap: 11px; overflow-y: auto; flex: 1; }
+
+    .dp-field {}
+    .dp-lbl { font-size: 9px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 3px; }
+    .dp-val { font-size: 12.5px; color: var(--text); line-height: 1.5; }
+
+    .oil-tag {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 9px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid;
+    }
+    .oil-tag.軽油 { color: #4FC3F7; border-color: rgba(79,195,247,.3); background: rgba(79,195,247,.1); }
+    .oil-tag.重油 { color: #FF7043; border-color: rgba(255,112,67,.3); background: rgba(255,112,67,.1); }
+    .oil-tag.灯油 { color: #A5D6A7; border-color: rgba(165,214,167,.3); background: rgba(165,214,167,.1); }
+
+    .time-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 9px; border-radius: 4px; font-size: 11px; font-weight: 600;
+      border: 1px solid rgba(255,159,67,.3); background: rgba(255,159,67,.08); color: #FF9F43;
+    }
+
+    .tel-val { color: var(--cyan); font-size: 12.5px; }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* pulse anim for active marker */
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 currentColor; }
+      70% { transform: scale(1.1); box-shadow: 0 0 0 6px transparent; }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+    }
+
+    /* map legend */
+    #legend {
+      position: absolute; bottom: 22px; left: 14px; z-index: 900;
+      background: rgba(13,15,26,.88); border: 1px solid var(--border);
+      border-radius: 7px; padding: 10px 12px;
+      backdrop-filter: blur(6px);
+    }
+    #legend .leg-title { font-size: 9px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 7px; }
+    .leg-row { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; font-size: 11px; }
+    .leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .leg-name { color: var(--text); }
+    .leg-cnt { margin-left: auto; color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+<div id="root">
+  <header>
+    <div class="logo">向陽 <em>配車ノート</em></div>
+    <div class="date-chip">2026.05.26 <span class="weekday">（火）</span></div>
+    <div class="header-stats">
+      <div class="hstat">
+        <div class="hstat-num" id="h-total">0</div>
+        <div class="hstat-lbl">本日配車件数</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-num" id="h-drivers">0</div>
+        <div class="hstat-lbl">稼働ドライバー</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <aside>
+      <div class="sb-head">
+        <div class="sb-title">ドライバー</div>
+        <div class="sb-controls">
+          <button class="btn-xs" onclick="App.showAll()">全員表示</button>
+          <button class="btn-xs" onclick="App.hideAll()">全員非表示</button>
+        </div>
+      </div>
+      <div class="driver-list" id="driver-list"></div>
+      <div class="sb-foot">
+        <div class="sb-title">油種フィルタ</div>
+        <div class="oil-tabs">
+          <button class="oil-tab on" data-oil="all"  onclick="App.filterOil(this)">全て</button>
+          <button class="oil-tab"    data-oil="軽油" onclick="App.filterOil(this)">軽油</button>
+          <button class="oil-tab"    data-oil="重油" onclick="App.filterOil(this)">重油</button>
+          <button class="oil-tab"    data-oil="灯油" onclick="App.filterOil(this)">灯油</button>
+        </div>
+      </div>
+    </aside>
+
+    <div id="map-wrap">
+      <div id="map"></div>
+
+      <!-- floating legend -->
+      <div id="legend">
+        <div class="leg-title">凡例</div>
+        <div id="legend-body"></div>
+      </div>
+
+      <!-- detail slide panel -->
+      <div id="detail">
+        <div class="dp-head">
+          <div>
+            <div class="dp-company" id="dp-company">-</div>
+            <div class="dp-driver">
+              <div class="dp-driver-dot" id="dp-ddot"></div>
+              <div class="dp-driver-name" id="dp-dname"></div>
+            </div>
+          </div>
+          <div class="dp-close" onclick="App.closeDetail()">✕</div>
+        </div>
+        <div class="dp-body">
+          <div class="dp-field">
+            <div class="dp-lbl">住所</div>
+            <div class="dp-val" id="dp-addr">-</div>
+          </div>
+          <div class="dp-field">
+            <div class="dp-lbl">油種</div>
+            <div class="dp-val" id="dp-oil"></div>
+          </div>
+          <div class="dp-field">
+            <div class="dp-lbl">時間指定</div>
+            <div class="dp-val" id="dp-time">-</div>
+          </div>
+          <div class="dp-field" id="dp-veh-f" style="display:none">
+            <div class="dp-lbl">車両 No.</div>
+            <div class="dp-val" id="dp-veh">-</div>
+          </div>
+          <div class="dp-field" id="dp-tel-f" style="display:none">
+            <div class="dp-lbl">電話番号</div>
+            <div class="dp-val tel-val" id="dp-tel">-</div>
+          </div>
+          <div class="dp-field" id="dp-note-f" style="display:none">
+            <div class="dp-lbl">備考</div>
+            <div class="dp-val" id="dp-note">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ═══════════════════════════════════════════════
+   DATA  (PDFより抽出 2026-05-26 火曜日)
+═══════════════════════════════════════════════ */
+const DRIVERS = [
+  { id:'hosoda',   name:'細田',   color:'#FF6B6B', vehicle:'38',    active:true },
+  { id:'naito',    name:'内藤',   color:'#4ECDC4', vehicle:'40',    active:true },
+  { id:'hirano',   name:'平野',   color:'#45B7D1', vehicle:'36/40', active:true },
+  { id:'morita',   name:'盛田',   color:'#A8E6CF', vehicle:'41',    active:true },
+  { id:'moriya',   name:'森谷',   color:'#FFD93D', vehicle:'40/41', active:true },
+  { id:'hashimoto',name:'橋本',   color:'#C77DFF', vehicle:'37/43', active:true },
+  { id:'yokomizo', name:'横溝',   color:'#00D2D3', vehicle:'34',    active:true },
+  { id:'takahashi',name:'高橋',   color:'#FF9F43', vehicle:'39/43', active:true },
+];
+
+const DELIVERIES = [
+  /* 細田 */
+  { id:1,  driver:'hosoda',    company:'昭立造園',          address:'昭島市緑町3-16',          oil:'軽油', time:'-',          lat:35.7054, lng:139.3537 },
+  { id:2,  driver:'hosoda',    company:'山菱産業',          address:'青梅市成木8丁目452-1',    oil:'軽油', time:'-',          lat:35.8041, lng:139.2273 },
+  { id:3,  driver:'hosoda',    company:'安藤商会',          address:'八王子市丹木町2-268',     oil:'軽油', time:'夕方',       lat:35.6726, lng:139.3101, veh:'38', note:'103' },
+  { id:4,  driver:'hosoda',    company:'中薗建材土木',      address:'八王子市戸吹町469-5',     oil:'軽油', time:'夕方',       lat:35.6702, lng:139.3215, veh:'38' },
+  { id:5,  driver:'hosoda',    company:'富田建材',          address:'八王子市',                oil:'軽油', time:'-',          lat:35.6512, lng:139.3456 },
+  { id:6,  driver:'hosoda',    company:'上林建材（美山）', address:'八王子市美山',            oil:'軽油', time:'-',          lat:35.6234, lng:139.3012 },
+  { id:7,  driver:'hosoda',    company:'八王子資源',        address:'八王子市',                oil:'軽油', time:'-',          lat:35.6423, lng:139.3612 },
+  { id:8,  driver:'hosoda',    company:'山兼',              address:'奥多摩町川井640',         oil:'軽油', time:'-',          lat:35.8145, lng:139.0654, tel:'090-7822-5091', note:'井上様' },
+  { id:9,  driver:'hosoda',    company:'カネモト工業',      address:'入間市南峯693',           oil:'軽油', time:'-',          lat:35.8232, lng:139.3756, tel:'090-1736-0337', note:'吉川様・毎週火曜定期' },
+
+  /* 内藤 */
+  { id:10, driver:'naito',     company:'勝沢重機',          address:'あきる野市牛沼1100',      oil:'軽油', time:'13:00〜17:00', lat:35.7287, lng:139.2934, veh:'40', tel:'080-2239-9971', note:'寺沢オペ297' },
+
+  /* 平野 */
+  { id:11, driver:'hirano',    company:'カネモト工業（程久保）', address:'日野市程久保5-18-6', oil:'軽油', time:'7:30〜8:30', lat:35.6627, lng:139.4113, tel:'080-2552-8019', note:'鮎川様' },
+  { id:12, driver:'hirano',    company:'カネモト工業（万願寺）', address:'日野市万願寺4-24-2', oil:'軽油', time:'7:00〜8:00', lat:35.6719, lng:139.4025, note:'ゼニタ様' },
+  { id:13, driver:'hirano',    company:'東邦建設工業（平山）',  address:'日野市程久保5-21-1', oil:'軽油', time:'7:00〜7:30', lat:35.6640, lng:139.4130, tel:'080-8731-7544', note:'佐藤様・旧多摩テック置場' },
+  { id:14, driver:'hirano',    company:'福島製鋼',          address:'相模原市緑区町屋1-1-40', oil:'重油', time:'-',          lat:35.5893, lng:139.2654, veh:'36', note:'お風呂確認' },
+  { id:15, driver:'hirano',    company:'比留間製麺',        address:'武蔵村山市残堀1-114-3',  oil:'重油', time:'3:00〜16:00', lat:35.7498, lng:139.3891, veh:'36' },
+  { id:16, driver:'hirano',    company:'ブループラネット稲城', address:'稲城市大丸1442',     oil:'軽油', time:'14:00〜15:00', lat:35.6394, lng:139.4881, veh:'40', tel:'080-1222-0077', note:'芦川様' },
+
+  /* 盛田 */
+  { id:17, driver:'morita',    company:'三橋木材工業（中野上）', address:'八王子市中野上町4-3-1', oil:'軽油', time:'夕方', lat:35.6543, lng:139.3987, veh:'41' },
+
+  /* 森谷 */
+  { id:18, driver:'moriya',    company:'西田商店（戸吹）', address:'八王子市戸吹',            oil:'軽油', time:'-',          lat:35.6705, lng:139.3208 },
+  { id:19, driver:'moriya',    company:'キタヤマ建設（小宮）', address:'八王子市小宮5丁目',  oil:'軽油', time:'7:00〜8:00', lat:35.6574, lng:139.3843, note:'ヤマノメ様' },
+  { id:20, driver:'moriya',    company:'東邦建設（日野水道）', address:'八王子市小宮町233-3', oil:'軽油', time:'-',          lat:35.6580, lng:139.3850, tel:'080-9299-5092', note:'いとい' },
+  { id:21, driver:'moriya',    company:'カネモト工業（昭島）', address:'昭島市武蔵野2-20-11', oil:'軽油', time:'-',          lat:35.7010, lng:139.3655 },
+  { id:22, driver:'moriya',    company:'東邦建設（富士見町）', address:'日野市栄町5-23-9',   oil:'軽油', time:'8:00位',     lat:35.6721, lng:139.4023 },
+  { id:23, driver:'moriya',    company:'三信建設工業',      address:'八王子市小宮町501',       oil:'軽油', time:'-',          lat:35.6576, lng:139.3860 },
+  { id:24, driver:'moriya',    company:'影向興産',          address:'昭島市玉川町1-3',         oil:'軽油', time:'-',          lat:35.6969, lng:139.3521, veh:'41' },
+  { id:25, driver:'moriya',    company:'西和',              address:'八王子市滝山町2丁目',     oil:'軽油', time:'夕方',       lat:35.6812, lng:139.3564 },
+  { id:26, driver:'moriya',    company:'内埜建設',          address:'八王子市宮下町11-2',      oil:'軽油', time:'AM',         lat:35.6534, lng:139.3623, tel:'090-3319-8513', note:'内埜' },
+  { id:27, driver:'moriya',    company:'酒井組',            address:'八王子市石川町490-1',     oil:'軽油', time:'-',          lat:35.6456, lng:139.3764, tel:'080-8849-8478', note:'井上様' },
+  { id:28, driver:'moriya',    company:'富士重機建設',      address:'昭島市福島町2-35',        oil:'軽油', time:'-',          lat:35.7015, lng:139.3660 },
+  { id:29, driver:'moriya',    company:'瑛興建設（昭島）', address:'昭島市玉川町5-4-9',       oil:'軽油', time:'-',          lat:35.6972, lng:139.3518 },
+  { id:30, driver:'moriya',    company:'田中建設',          address:'八王子市元本郷町2-21-1',  oil:'軽油', time:'17:00',      lat:35.6617, lng:139.4189, tel:'080-4755-4996', note:'後藤様' },
+
+  /* 橋本 */
+  { id:31, driver:'hashimoto', company:'カネモト（桜上水）', address:'世田谷区赤堤3-38-11',  oil:'軽油', time:'7:30〜8:00', lat:35.6567, lng:139.6443, veh:'37', tel:'080-9414-7124', note:'コガワ様' },
+  { id:32, driver:'hashimoto', company:'キタヤマ建設',       address:'八王子市小宮5丁目',      oil:'軽油', time:'7:00〜8:00', lat:35.6578, lng:139.3845, veh:'37' },
+  { id:33, driver:'hashimoto', company:'シンクリエイト',     address:'西東京市田無町2-21-12',  oil:'軽油', time:'AM',         lat:35.7315, lng:139.5374, veh:'43', tel:'090-3801-0650', note:'みの様' },
+  { id:34, driver:'hashimoto', company:'大進緑建（調布）',  address:'調布市染地3-1-815',      oil:'軽油', time:'AM',         lat:35.6529, lng:139.5644, veh:'37', tel:'090-6943-4541', note:'佐々木様・ガソリン20L持参' },
+  { id:35, driver:'hashimoto', company:'タクマ（昭島）',    address:'昭島市宮沢町3-15-1',     oil:'軽油', time:'-',          lat:35.7060, lng:139.3538 },
+  { id:36, driver:'hashimoto', company:'セントラルリバー',   address:'立川市曙町3-8',          oil:'軽油', time:'-',          lat:35.6986, lng:139.4155, veh:'43', tel:'080-4136-1802', note:'関根・火曜定期' },
+  { id:37, driver:'hashimoto', company:'キタヤマ建設（武蔵村山）', address:'武蔵村山市三ツ藤3-11-22', oil:'軽油', time:'PM', lat:35.7498, lng:139.3898, veh:'43' },
+  { id:38, driver:'hashimoto', company:'成友興業多摩西',    address:'所沢市林1-306-7',         oil:'軽油', time:'-',          lat:35.8023, lng:139.4134, tel:'080-2236-9056', note:'山口様・到着前TEL' },
+  { id:39, driver:'hashimoto', company:'㈱SEA（エネアース）', address:'三鷹市牟礼6-25-28',  oil:'軽油', time:'AM',         lat:35.6785, lng:139.5598, note:'井福様' },
+  { id:40, driver:'hashimoto', company:'アドバンス・クラフト', address:'日野市東平山2-14-4', oil:'軽油', time:'-',          lat:35.6701, lng:139.4234, tel:'080-1184-8212', note:'やまざき様' },
+
+  /* 横溝（灯油） */
+  { id:41, driver:'yokomizo',  company:'橋本産業',          address:'日野市東豊田2-23-1',      oil:'灯油', time:'-',          lat:35.6701, lng:139.4240, veh:'34' },
+  { id:42, driver:'yokomizo',  company:'佐藤建設工業（戸吹）', address:'八王子市戸吹町1452', oil:'灯油', time:'-',          lat:35.6695, lng:139.3218, veh:'34' },
+  { id:43, driver:'yokomizo',  company:'拝島ランドリー',    address:'昭島市拝島町1-8-14',      oil:'灯油', time:'午前中',     lat:35.7068, lng:139.3542, veh:'34' },
+  { id:44, driver:'yokomizo',  company:'マルイガス-心成苑', address:'八王子市館町1783',        oil:'灯油', time:'-',          lat:35.6345, lng:139.3543, veh:'34' },
+  { id:45, driver:'yokomizo',  company:'南関東ふそう',      address:'八王子市石川町2969-4',    oil:'灯油', time:'毎週火曜',   lat:35.6450, lng:139.3770, veh:'34' },
+  { id:46, driver:'yokomizo',  company:'東京燃料林産-和心', address:'八王子市緑町616',         oil:'灯油', time:'-',          lat:35.6534, lng:139.3990, veh:'34' },
+
+  /* 高橋 */
+  { id:47, driver:'takahashi', company:'完山金属（大船）',   address:'八王子市大船町870',       oil:'軽油', time:'-',          lat:35.6245, lng:139.3234, veh:'39' },
+  { id:48, driver:'takahashi', company:'完山金属（高尾）',   address:'八王子市南浅川町3952-1',  oil:'軽油', time:'-',          lat:35.6134, lng:139.3312, veh:'39' },
+  { id:49, driver:'takahashi', company:'リノグレス（下柚木）', address:'八王子市下柚木',       oil:'軽油', time:'-',          lat:35.6234, lng:139.3801, veh:'39' },
+  { id:50, driver:'takahashi', company:'ワタイチ（狭間）',   address:'八王子市館町2456',        oil:'軽油', time:'-',          lat:35.6348, lng:139.3548, veh:'39', tel:'090-4079-4479', note:'沼畑様' },
+  { id:51, driver:'takahashi', company:'リノグレス（大谷）', address:'八王子市大谷',            oil:'軽油', time:'-',          lat:35.6445, lng:139.3430, veh:'39' },
+  { id:52, driver:'takahashi', company:'エネアース（城山）', address:'相模原市緑区城山2-1-1',  oil:'軽油', time:'15:00まで',  lat:35.5634, lng:139.2978, veh:'43', note:'0.25・3tダンプ' },
+  { id:53, driver:'takahashi', company:'よみうりゴルフガーデン', address:'美浜',              oil:'軽油', time:'-',          lat:35.6723, lng:139.3765 },
+  { id:54, driver:'takahashi', company:'クロスエネルギー-丸大観光', address:'八王子市',       oil:'軽油', time:'フリー',     lat:35.6612, lng:139.3987, note:'軽油14KL' },
+  { id:55, driver:'takahashi', company:'セントラルリバー（立川）', address:'立川市曙町3-8',   oil:'軽油', time:'-',          lat:35.6993, lng:139.4163, veh:'43', note:'火曜定期' },
+  { id:56, driver:'takahashi', company:'キタヤマ建設（武蔵村山）', address:'武蔵村山市三ツ藤3-11-22', oil:'軽油', time:'PM', lat:35.7502, lng:139.3908, veh:'43' },
+  { id:57, driver:'takahashi', company:'真尾商店',            address:'八王子市横川町720-4',    oil:'軽油', time:'夕方',       lat:35.6523, lng:139.3789, veh:'43' },
+];
+
+/* ═══════════════════════════════════════════════
+   APP
+═══════════════════════════════════════════════ */
+const App = (() => {
+  let map, layerGroup;
+  let activeOil = 'all';
+  let openMarkerId = null;
+
+  const drMap = {};
+  DRIVERS.forEach(d => drMap[d.id] = d);
+
+  /* ── init ── */
+  function init() {
+    map = L.map('map', { center:[35.685, 139.38], zoom:12, zoomControl:true });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution:'&copy; OpenStreetMap &copy; CARTO',
+      subdomains:'abcd', maxZoom:19
+    }).addTo(map);
+
+    layerGroup = L.layerGroup().addTo(map);
+
+    map.on('click', () => closeDetail());
+
+    buildSidebar();
+    buildLegend();
+    renderMarkers();
+    updateHeader();
+  }
+
+  /* ── sidebar ── */
+  function buildSidebar() {
+    const el = document.getElementById('driver-list');
+    el.innerHTML = '';
+    DRIVERS.forEach(d => {
+      const count = DELIVERIES.filter(x => x.driver === d.id).length;
+      const row = document.createElement('div');
+      row.className = 'driver-row' + (d.active ? '' : ' off');
+      row.id = 'dr-' + d.id;
+      row.innerHTML = `
+        <div class="d-dot" style="background:${d.color}"></div>
+        <div class="d-name">${d.name}</div>
+        ${d.vehicle ? `<div class="d-veh">${d.vehicle}号</div>` : ''}
+        <div class="d-count">${count}件</div>
+      `;
+      row.addEventListener('click', () => toggleDriver(d.id));
+      el.appendChild(row);
+    });
+  }
+
+  function buildLegend() {
+    const el = document.getElementById('legend-body');
+    el.innerHTML = '';
+    DRIVERS.forEach(d => {
+      const count = getVisible().filter(x => x.driver === d.id).length;
+      el.innerHTML += `
+        <div class="leg-row">
+          <div class="leg-dot" style="background:${d.color}"></div>
+          <div class="leg-name">${d.name}</div>
+          <div class="leg-cnt">${count}</div>
+        </div>`;
+    });
+  }
+
+  /* ── markers ── */
+  function getVisible() {
+    return DELIVERIES.filter(d => {
+      const dr = drMap[d.driver];
+      if (!dr.active) return false;
+      if (activeOil !== 'all' && d.oil !== activeOil) return false;
+      return true;
+    });
+  }
+
+  function renderMarkers() {
+    layerGroup.clearLayers();
+    const visible = getVisible();
+
+    visible.forEach(del => {
+      const dr = drMap[del.driver];
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="
+          width:13px; height:13px; border-radius:50%;
+          background:${dr.color}; border:2px solid #fff;
+          box-shadow:0 2px 8px rgba(0,0,0,.5);
+          cursor:pointer;
+          transition: transform .15s;
+        " data-id="${del.id}"></div>`,
+        iconSize:[13,13],
+        iconAnchor:[6,6],
+        popupAnchor:[0,-10]
+      });
+
+      const m = L.marker([del.lat, del.lng], { icon })
+        .addTo(layerGroup)
+        .bindTooltip(`<b>${del.company}</b><br><small>${del.address}</small>`, {
+          className: 'custom-tip',
+          direction: 'top', offset:[0,-10]
+        });
+
+      m.on('click', e => {
+        e.originalEvent.stopPropagation();
+        openDetail(del);
+      });
+    });
+
+    buildLegend();
+    updateHeader();
+  }
+
+  /* ── detail panel ── */
+  function openDetail(del) {
+    const dr = drMap[del.driver];
+    const panel = document.getElementById('detail');
+
+    document.getElementById('dp-company').textContent = del.company;
+    document.getElementById('dp-ddot').style.background = dr.color;
+    document.getElementById('dp-dname').textContent = dr.name + ' ドライバー';
+    document.getElementById('dp-addr').textContent = del.address;
+    document.getElementById('dp-time').innerHTML = del.time !== '-'
+      ? `<span class="time-tag">⏰ ${del.time}</span>`
+      : '<span style="color:var(--muted)">指定なし</span>';
+
+    document.getElementById('dp-oil').innerHTML = `<span class="oil-tag ${del.oil}">${del.oil}</span>`;
+
+    const vehF = document.getElementById('dp-veh-f');
+    if (del.veh) {
+      vehF.style.display = '';
+      document.getElementById('dp-veh').textContent = del.veh + '号車';
+    } else { vehF.style.display = 'none'; }
+
+    const telF = document.getElementById('dp-tel-f');
+    if (del.tel) {
+      telF.style.display = '';
+      document.getElementById('dp-tel').innerHTML = `<a href="tel:${del.tel}" style="color:var(--cyan)">${del.tel}</a>`;
+    } else { telF.style.display = 'none'; }
+
+    const noteF = document.getElementById('dp-note-f');
+    if (del.note) {
+      noteF.style.display = '';
+      document.getElementById('dp-note').textContent = del.note;
+    } else { noteF.style.display = 'none'; }
+
+    panel.classList.add('open');
+    openMarkerId = del.id;
+
+    map.panTo([del.lat, del.lng], { animate:true, duration:.4 });
+  }
+
+  function closeDetail() {
+    document.getElementById('detail').classList.remove('open');
+    openMarkerId = null;
+  }
+
+  /* ── driver toggle ── */
+  function toggleDriver(id) {
+    const dr = drMap[id];
+    dr.active = !dr.active;
+    const row = document.getElementById('dr-' + id);
+    row.classList.toggle('off', !dr.active);
+    renderMarkers();
+    updateHeader();
+  }
+
+  function showAll() {
+    DRIVERS.forEach(d => { d.active = true; document.getElementById('dr-'+d.id).classList.remove('off'); });
+    renderMarkers(); updateHeader();
+  }
+
+  function hideAll() {
+    DRIVERS.forEach(d => { d.active = false; document.getElementById('dr-'+d.id).classList.add('off'); });
+    renderMarkers(); updateHeader();
+  }
+
+  /* ── oil filter ── */
+  function filterOil(btn) {
+    document.querySelectorAll('.oil-tab').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    activeOil = btn.dataset.oil;
+    renderMarkers();
+  }
+
+  /* ── header stats ── */
+  function updateHeader() {
+    const v = getVisible();
+    document.getElementById('h-total').textContent = v.length;
+    const activeDrivers = new Set(v.map(x => x.driver)).size;
+    document.getElementById('h-drivers').textContent = activeDrivers;
+  }
+
+  return { init, showAll, hideAll, filterOil, closeDetail };
+})();
+
+/* ── Leaflet tooltip style ── */
+const style = document.createElement('style');
+style.textContent = `
+  .custom-tip {
+    background: #1b1e35 !important;
+    border: 1px solid #252840 !important;
+    border-radius: 5px !important;
+    color: #dde1f0 !important;
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,.5) !important;
+  }
+  .leaflet-tooltip-top.custom-tip::before { border-top-color: #252840 !important; }
+`;
+document.head.appendChild(style);
+
+/* ── Start ── */
+window.addEventListener('DOMContentLoaded', App.init);
+</script>
+</body>
+</html>
