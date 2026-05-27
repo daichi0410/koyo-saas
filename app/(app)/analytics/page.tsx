@@ -49,7 +49,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
 
   const supabase = await createClient();
 
-  // 期間内の配車データを取得
+  // 期間内の配車データを取得（Supabaseのデフォルト1000件制限を解除）
   const { data: deliveriesData } = await supabase
     .from("deliveries")
     .select("*, driver:drivers(*)")
@@ -57,7 +57,8 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     .lte("date", endDate)
     .not("lat", "is", null)
     .not("lng", "is", null)
-    .order("date", { ascending: true });
+    .order("date", { ascending: true })
+    .limit(10000);
 
   const deliveries = (deliveriesData || []) as DeliveryWithDriver[];
 

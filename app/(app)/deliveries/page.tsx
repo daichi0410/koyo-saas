@@ -41,14 +41,15 @@ export default async function DeliveriesPage({
     dateTo = selectedDate;
   }
 
-  // 配車データを取得
+  // 配車データを取得（Supabaseのデフォルト1000件制限を解除）
   let query = supabase
     .from("deliveries")
     .select("*, driver:drivers(*)")
     .gte("date", dateFrom)
     .lte("date", dateTo)
     .order("date", { ascending: true })
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(10000);
 
   // ドライバーフィルタ
   if (params.driver) {
