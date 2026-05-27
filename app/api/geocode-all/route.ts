@@ -1,5 +1,19 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createServerClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
+
+// サービスロールキーがある場合はそれを使用（RLSをバイパス）
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (serviceRoleKey) {
+    return createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false }
+    });
+  }
+  return null;
+}
 
 // 国土地理院APIでジオコーディング
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
@@ -28,7 +42,9 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
 
 // 既存データをジオコーディング
 export async function POST() {
-  const supabase = await createClient();
+  // サービスロールキーがあればそれを使用、なければ通常のクライアント
+  const adminClient = getSupabaseAdmin();
+  const supabase = adminClient || await createServerClient();
 
   // lat/lng が null のレコードを取得
   const { data: deliveries, error } = await supabase
@@ -103,7 +119,8 @@ export async function POST() {
 
 // 現在の状況を確認
 export async function GET() {
-  const supabase = await createClient();
+  const adminClient = getSupabaseAdmin();
+  const supabase = adminClient || await createServerClient();
 
   const { count: totalCount } = await supabase
     .from("deliveries")
