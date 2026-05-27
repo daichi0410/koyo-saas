@@ -7,7 +7,10 @@
       "Bash(npx next build)",
       "Bash(./node_modules/.bin/next build:*)",
       "Bash(curl:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(node scripts/convert-csv.js:*)",
+      "Bash(head:*)"
     ]
   }
 }

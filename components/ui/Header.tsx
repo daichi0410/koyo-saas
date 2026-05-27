@@ -22,6 +22,7 @@ export function Header() {
   const today = new Date();
 
   const getPageTitle = () => {
+    if (pathname.startsWith("/analytics")) return "アナリティクス";
     if (pathname.startsWith("/map")) return "エリアマップ";
     if (pathname.startsWith("/deliveries/new")) return "新規配車入力";
     if (pathname.startsWith("/deliveries")) return "配車記録";
