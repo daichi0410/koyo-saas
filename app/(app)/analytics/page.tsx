@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
 import type { Driver, DeliveryWithDriver } from "@/lib/types";
+import { AnalyticsPeriodSelector } from "@/components/map/AnalyticsPeriodSelector";
 
 // SSR無効化でMapコンポーネントを読み込み
 const AnalyticsMap = dynamic(
@@ -92,47 +93,3 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   );
 }
 
-// クライアントコンポーネントとして期間選択を分離
-function AnalyticsPeriodSelector({
-  startDate,
-  endDate,
-}: {
-  startDate: string;
-  endDate: string;
-}) {
-  return (
-    <AnalyticsPeriodSelectorClient startDate={startDate} endDate={endDate} />
-  );
-}
-
-// 動的インポートでクライアントコンポーネントを読み込み
-const AnalyticsPeriodSelectorClient = dynamic(
-  () =>
-    import("@/components/map/PeriodSelector").then((mod) => {
-      const PeriodSelectorWrapper = ({
-        startDate,
-        endDate,
-      }: {
-        startDate: string;
-        endDate: string;
-      }) => {
-        const handlePeriodChange = (start: string, end: string) => {
-          // URLを更新してページをリロード
-          const url = new URL(window.location.href);
-          url.searchParams.set("from", start);
-          url.searchParams.set("to", end);
-          window.location.href = url.toString();
-        };
-
-        return (
-          <mod.PeriodSelector
-            startDate={startDate}
-            endDate={endDate}
-            onPeriodChange={handlePeriodChange}
-          />
-        );
-      };
-      return PeriodSelectorWrapper;
-    }),
-  { ssr: false }
-);
