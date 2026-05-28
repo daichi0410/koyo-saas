@@ -40,6 +40,8 @@ export function DeliveryDetail({ delivery, drivers }: DeliveryDetailProps) {
     tel: delivery.tel || "",
     contact_name: delivery.contact_name || "",
     notes: delivery.notes || "",
+    tax_exempt_number: delivery.tax_exempt_number || "",
+    unit_price: delivery.unit_price?.toString() || "",
     status: delivery.status,
   });
 
@@ -79,6 +81,8 @@ export function DeliveryDetail({ delivery, drivers }: DeliveryDetailProps) {
           tel: formData.tel || null,
           contact_name: formData.contact_name || null,
           notes: formData.notes || null,
+          tax_exempt_number: formData.tax_exempt_number || null,
+          unit_price: formData.unit_price ? parseFloat(formData.unit_price) : null,
           status: formData.status,
         })
         .eq("id", delivery.id);
@@ -109,6 +113,8 @@ export function DeliveryDetail({ delivery, drivers }: DeliveryDetailProps) {
       tel: delivery.tel || "",
       contact_name: delivery.contact_name || "",
       notes: delivery.notes || "",
+      tax_exempt_number: delivery.tax_exempt_number || "",
+      unit_price: delivery.unit_price?.toString() || "",
       status: delivery.status,
     });
     setIsEditing(false);
@@ -279,6 +285,38 @@ export function DeliveryDetail({ delivery, drivers }: DeliveryDetailProps) {
                 value={formData.vehicle_no}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, vehicle_no: e.target.value }))
+                }
+                className="w-full px-3 py-2.5 bg-dark-panel2 border border-dark-border rounded text-dark-text focus:outline-none focus:border-cyan"
+              />
+            </div>
+          </div>
+
+          {/* 販売単価・免税番号 */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-dark-muted uppercase tracking-wide mb-2">
+                販売単価 (円/L)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.unit_price}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, unit_price: e.target.value }))
+                }
+                className="w-full px-3 py-2.5 bg-dark-panel2 border border-dark-border rounded text-dark-text focus:outline-none focus:border-cyan"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-dark-muted uppercase tracking-wide mb-2">
+                免税番号
+              </label>
+              <input
+                type="text"
+                value={formData.tax_exempt_number}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, tax_exempt_number: e.target.value }))
                 }
                 className="w-full px-3 py-2.5 bg-dark-panel2 border border-dark-border rounded text-dark-text focus:outline-none focus:border-cyan"
               />
@@ -525,6 +563,24 @@ export function DeliveryDetail({ delivery, drivers }: DeliveryDetailProps) {
                 車両番号
               </label>
               <div className="text-dark-text">{delivery.vehicle_no}号</div>
+            </div>
+          )}
+
+          {delivery.unit_price && (
+            <div>
+              <label className="block text-xs font-semibold text-dark-muted uppercase tracking-wide mb-1">
+                販売単価
+              </label>
+              <div className="text-dark-text">{delivery.unit_price} 円/L</div>
+            </div>
+          )}
+
+          {delivery.tax_exempt_number && (
+            <div>
+              <label className="block text-xs font-semibold text-dark-muted uppercase tracking-wide mb-1">
+                免税番号
+              </label>
+              <div className="text-dark-text">{delivery.tax_exempt_number}</div>
             </div>
           )}
 

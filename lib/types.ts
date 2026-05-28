@@ -44,6 +44,8 @@ export interface Delivery {
   tel: string | null;
   contact_name: string | null;
   notes: string | null;
+  tax_exempt_number: string | null;
+  unit_price: number | null;
   status: DeliveryStatus;
   source: string;
   created_at: string;
@@ -84,6 +86,8 @@ export interface DeliveryFormData {
   tel?: string;
   contact_name?: string;
   notes?: string;
+  tax_exempt_number?: string;
+  unit_price?: number;
 }
 
 // フィルター用の型

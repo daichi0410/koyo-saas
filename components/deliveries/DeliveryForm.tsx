@@ -47,6 +47,8 @@ export function DeliveryForm({
     tel: "",
     contact_name: "",
     notes: "",
+    tax_exempt_number: "",
+    unit_price: "",
   });
 
   // 会社名の入力でオートコンプリート
@@ -133,6 +135,8 @@ export function DeliveryForm({
         tel: formData.tel || null,
         contact_name: formData.contact_name || null,
         notes: formData.notes || null,
+        tax_exempt_number: formData.tax_exempt_number || null,
+        unit_price: formData.unit_price ? parseFloat(formData.unit_price) : null,
         status: "scheduled",
         source: "manual",
       });
@@ -154,6 +158,8 @@ export function DeliveryForm({
           tel: "",
           contact_name: "",
           notes: "",
+          tax_exempt_number: "",
+          unit_price: "",
         }));
         companyInputRef.current?.focus();
       } else {
@@ -376,6 +382,40 @@ export function DeliveryForm({
               setFormData((prev) => ({ ...prev, vehicle_no: e.target.value }))
             }
             placeholder="例: 38"
+            className="w-full px-3 py-2.5 bg-dark-panel2 border border-dark-border rounded text-dark-text placeholder-dark-muted focus:outline-none focus:border-cyan"
+          />
+        </div>
+      </div>
+
+      {/* 販売単価・免税番号 */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-semibold text-dark-muted uppercase tracking-wide mb-2">
+            販売単価 (円/L)
+          </label>
+          <input
+            type="number"
+            step="0.01"
+            value={formData.unit_price}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, unit_price: e.target.value }))
+            }
+            placeholder="例: 120.50"
+            className="w-full px-3 py-2.5 bg-dark-panel2 border border-dark-border rounded text-dark-text placeholder-dark-muted focus:outline-none focus:border-cyan"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-dark-muted uppercase tracking-wide mb-2">
+            免税番号
+          </label>
+          <input
+            type="text"
+            value={formData.tax_exempt_number}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, tax_exempt_number: e.target.value }))
+            }
+            placeholder="例: 12345678"
             className="w-full px-3 py-2.5 bg-dark-panel2 border border-dark-border rounded text-dark-text placeholder-dark-muted focus:outline-none focus:border-cyan"
           />
         </div>
