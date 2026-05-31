@@ -3,12 +3,14 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { Driver, DeliveryWithDriver, OilType } from "@/lib/types";
+import { DeliveryKanban } from "./DeliveryKanban";
 
 interface DeliveryListProps {
   deliveries: DeliveryWithDriver[];
   drivers: Driver[];
   selectedDate: string;
   viewMode: "day" | "week";
+  displayMode: "table" | "board";
   selectedDriver?: string;
   selectedOil?: string;
   dateFrom: string;
@@ -33,6 +35,7 @@ export function DeliveryList({
   drivers,
   selectedDate,
   viewMode,
+  displayMode,
   selectedDriver,
   selectedOil,
   dateFrom,
@@ -67,6 +70,10 @@ export function DeliveryList({
 
   const handleOilChange = (oil: string) => {
     updateParams({ oil: oil || undefined });
+  };
+
+  const handleDisplayModeChange = (mode: "table" | "board") => {
+    updateParams({ display: mode });
   };
 
   const navigateDate = (direction: "prev" | "next") => {
@@ -196,7 +203,7 @@ export function DeliveryList({
             </button>
           </div>
 
-          {/* ビュー切り替え */}
+          {/* 期間切り替え */}
           <div className="flex rounded overflow-hidden border border-dark-border">
             <button
               onClick={() => handleViewChange("day")}
@@ -217,6 +224,36 @@ export function DeliveryList({
               }`}
             >
               週次
+            </button>
+          </div>
+
+          {/* 表示切り替え */}
+          <div className="flex rounded overflow-hidden border border-dark-border">
+            <button
+              onClick={() => handleDisplayModeChange("table")}
+              className={`px-3 py-1.5 text-xs transition-colors flex items-center gap-1 ${
+                displayMode === "table"
+                  ? "bg-cyan text-black font-bold"
+                  : "bg-dark-panel2 text-dark-muted hover:text-dark-text"
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              テーブル
+            </button>
+            <button
+              onClick={() => handleDisplayModeChange("board")}
+              className={`px-3 py-1.5 text-xs transition-colors flex items-center gap-1 ${
+                displayMode === "board"
+                  ? "bg-cyan text-black font-bold"
+                  : "bg-dark-panel2 text-dark-muted hover:text-dark-text"
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+              </svg>
+              ボード
             </button>
           </div>
 
@@ -308,9 +345,13 @@ export function DeliveryList({
         </div>
       </div>
 
-      {/* テーブル */}
+      {/* コンテンツエリア */}
       <div className="flex-1 overflow-auto">
-        {deliveries.length > 0 ? (
+        {displayMode === "board" ? (
+          /* ボードビュー */
+          <DeliveryKanban deliveries={deliveries} drivers={drivers} />
+        ) : deliveries.length > 0 ? (
+          /* テーブルビュー */
           <div className="min-w-[1000px]">
             {Object.entries(deliveriesByDate).map(([date, dayDeliveries]) => (
               <div key={date}>
@@ -430,7 +471,7 @@ export function DeliveryList({
         ) : (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
-              <div className="text-5xl mb-4">📋</div>
+              <div className="text-5xl mb-4">&#128203;</div>
               <p className="text-dark-muted">配車データがありません</p>
               <Link
                 href={`/deliveries/new?date=${selectedDate}`}

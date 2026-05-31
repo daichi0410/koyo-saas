@@ -11,7 +11,10 @@
       "Bash(npx ts-node:*)",
       "Bash(node scripts/convert-csv.js:*)",
       "Bash(head:*)",
-      "Bash(timeout 15 ./node_modules/.bin/next:*)"
+      "Bash(timeout 15 ./node_modules/.bin/next:*)",
+      "Bash(xargs cat:*)",
+      "Bash(npx tsc:*)",
+      "Bash(./node_modules/.bin/tsc:*)"
     ]
   }
 }

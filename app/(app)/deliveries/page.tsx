@@ -5,6 +5,7 @@ import type { Driver, DeliveryWithDriver } from "@/lib/types";
 interface SearchParams {
   date?: string;
   view?: "day" | "week";
+  display?: "table" | "board";
   driver?: string;
   oil?: string;
 }
@@ -21,6 +22,7 @@ export default async function DeliveriesPage({
   const today = new Date();
   const selectedDate = params.date || today.toISOString().split("T")[0];
   const viewMode = params.view || "day";
+  const displayMode = params.display || "table";
 
   // 日付範囲を計算
   let dateFrom: string;
@@ -80,6 +82,7 @@ export default async function DeliveriesPage({
         drivers={drivers}
         selectedDate={selectedDate}
         viewMode={viewMode}
+        displayMode={displayMode}
         selectedDriver={params.driver}
         selectedOil={params.oil}
         dateFrom={dateFrom}
